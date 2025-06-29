@@ -1,12 +1,12 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-// require("dotenv").config();
+require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const app = express();
 const bcrypt = require("bcryptjs");
 const PORT = process.env.PORT || 8080;
-const MONGO = process.env.MONGOURL;
+const MONGOURL = process.env.MONGOURL;
 app.use(express.json());
 
 app.use(
@@ -15,7 +15,7 @@ app.use(
   })
 );
 
-mongoose.connect(MONGO, {
+mongoose.connect(MONGOURL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -38,7 +38,7 @@ const Task = mongoose.model("Task", taskSchema);
 
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
-  const hashed = await bcrypt(password, 10);
+  const hashed = await bcrypt.hash(password, 10);
   const user = new User({ username, password: hashed });
   await user.save();
   res.json({ message: "User has been registered" });
@@ -81,8 +81,8 @@ app.post("/tasks", authMiddleware, async (req, res) => {
 
 // Delete task request
 app.delete("/tasks/:id", authMiddleware, async (req, res) => {
-  await Task.findOneAndDelete({ _id: req.params.id.userId });
-  res.json({ messahe: "Task Deleted" });
+  await Task.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+  res.json({ message: "Task Deleted" });
 });
 
 // Update status of the task
@@ -98,7 +98,7 @@ app.patch("/tasks/:id/status", authMiddleware, async (req, res) => {
 });
 
 // Updating the priority
-app.patch("tasks/:id/priority", authMiddleware, async (req, res) => {
+app.patch("/tasks/:id/priority", authMiddleware, async (req, res) => {
   const { priority } = req.body;
   const task = await Task.findOneAndUpdate(
     { _id: req.params.id, userId: req.userId },
